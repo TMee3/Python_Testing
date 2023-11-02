@@ -28,7 +28,7 @@ def index():
 
 
 @app.route(rule='/showSummary', methods=['POST'])
-def showSummary():
+def show_summary():
     club = [club for club in clubs if club['email'] == request.form['email']]
     if len(club) > 0:
         return render_template(template_name_or_list='welcome.html', club=club[0], competitions=competitions)
@@ -47,14 +47,17 @@ def book(competition,club):
         return render_template('welcome.html', club=club, competitions=competitions)
 
 
-@app.route('/purchasePlaces',methods=['POST'])
-def purchasePlaces():
+@app.route(rule='/purchasePlaces', methods=['POST'])
+def purchase_places():
     competition = [c for c in competitions if c['name'] == request.form['competition']][0]
     club = [c for c in clubs if c['name'] == request.form['club']][0]
-    placesRequired = int(request.form['places'])
-    competition['numberOfPlaces'] = int(competition['numberOfPlaces'])-placesRequired
+    places_required = int(request.form['places'])
+    if places_required > int(club['points']):
+        return render_template(template_name_or_list='booking.html', club=club, competition=competition,
+                               error=f"You don't have enough points (balance={club['points']} points)."), 400
+    competition['numberOfPlaces'] = int(competition['numberOfPlaces'])-places_required
     flash('Great-booking complete!')
-    return render_template('welcome.html', club=club, competitions=competitions)
+    return render_template(template_name_or_list='welcome.html', club=club, competitions=competitions)
 
 
 # TODO: Add route for points display
