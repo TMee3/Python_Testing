@@ -10,7 +10,6 @@ def loadClubs():
          return listOfClubs
 
 
-
 def loadCompetitions():
     with open('competitions.json') as comps:
          listOfCompetitions = json.load(comps)['competitions']
@@ -63,41 +62,51 @@ def book(competition, club):
 
 @app.route(rule='/purchasePlaces', methods=['POST'])
 def purchase_places():
-    competition = [c for c in competitions if c['name'] == request.form['competition']][0]
-    club = [c for c in clubs if c['name'] == request.form['club']][0]
-    total_places = int(competition["numberOfPlaces"])
-    if request.form["places"].isdigit():
-        places_required = int(request.form['places'])
+    competition = [c for c in competitions if c['name'] == request.form['competition']]
+    club = [c for c in clubs if c['name'] == request.form['club']]
+    if len(club) > 0 and len(competition) > 0:
+        total_places = int(competition[0]["numberOfPlaces"])
+        if request.form["places"].isdigit():
+            places_required = int(request.form['places'])
+        else:
+            return render_template(template_name_or_list='booking.html',
+                                   club=club[0],
+                                   competition=competition[0],
+                                   total_places=total_places,
+                                   error="Please enter a number between 1 and 12"), 400
+        if places_required < 1 or places_required > 12:
+            return render_template(template_name_or_list='booking.html',
+                                   club=club[0],
+                                   competition=competition[0],
+                                   total_places=total_places,
+                                   error="Please take between 1 and 12 places maximum."), 400
+        if places_required > total_places:
+            return render_template(template_name_or_list='booking.html',
+                                   club=club[0],
+                                   competition=competition[0],
+                                   total_places=total_places,
+                                   error=f"Sorry, there are not enough places left ({total_places})."), 400
+        if places_required > int(club[0]['points']):
+            return render_template(template_name_or_list='booking.html',
+                                   club=club[0],
+                                   competition=competition[0],
+                                   total_places=total_places,
+                                   error=f"You don't have enough points (balance={club[0]['points']} points)."), 400
+        competition[0]['numberOfPlaces'] = total_places - places_required
+        club[0]['points'] = int(club[0]['points']) - places_required
+        flash('Great-booking complete!')
+        return render_template(template_name_or_list='welcome.html', club=club[0], competitions=competitions)
+    elif len(club) > 0 and len(competition) < 1:
+        flash("Something went wrong-please try again")
+        return render_template(template_name_or_list='welcome.html', club=club[0], competitions=competitions), 400
     else:
-        return render_template(template_name_or_list='booking.html',
-                               club=club,
-                               competition=competition,
-                               total_places=total_places,
-                               error="Please enter a number between 1 and 12"), 400
-    if places_required < 1 or places_required > 12:
-        return render_template(template_name_or_list='booking.html',
-                               club=club,
-                               competition=competition,
-                               total_places=total_places,
-                               error="Please take between 1 and 12 places maximum."), 400
-    if places_required > total_places:
-        return render_template(template_name_or_list='booking.html',
-                               club=club,
-                               competition=competition,
-                               total_places=total_places,
-                               error=f"Sorry, there are not enough places left ({total_places})."), 400
-    if places_required > int(club['points']):
-        return render_template(template_name_or_list='booking.html',
-                               club=club,
-                               competition=competition,
-                               total_places=total_places,
-                               error=f"You don't have enough points (balance={club['points']} points)."), 400
-    competition['numberOfPlaces'] = total_places - places_required
-    flash('Great-booking complete!')
-    return render_template(template_name_or_list='welcome.html', club=club, competitions=competitions)
+        return render_template(template_name_or_list='index.html',
+                               error="Sorry, you are not authorized to make this request."), 401
 
 
-# TODO: Add route for points display
+@app.route(rule='/clubs', methods=['GET'])
+def get_list_of_clubs():
+    return render_template(template_name_or_list='clubs.html', clubs=clubs)
 
 
 @app.route('/logout')
