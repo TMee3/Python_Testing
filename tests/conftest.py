@@ -28,7 +28,7 @@ def list_of_competitions():
         {
             "name": "Test competition",
             "date": "2024-01-01 11:00:00",
-            "numberOfPlaces": "20"
+            "numberOfPlaces": "11"
         },
     ]
     return competitions
