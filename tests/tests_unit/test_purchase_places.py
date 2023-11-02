@@ -1,7 +1,6 @@
 from bs4 import BeautifulSoup
 
 import server
-from tests.conftest import client, list_of_clubs
 
 
 class TestPurchasePlaces:
@@ -108,4 +107,20 @@ class TestPurchasePlaces:
         response_data_html = BeautifulSoup(response.data, features="html.parser")
         validation_message = response_data_html.find(name="ul", class_="message")
         assert "Great-booking complete!" in str(validation_message)
+        assert response.status_code == 200
+
+    def test_update_club_points_after_booking_place(self, monkeypatch, list_of_clubs, list_of_competitions, client):
+        monkeypatch.setattr(target=server, name="clubs", value=list_of_clubs)
+        monkeypatch.setattr(target=server, name="competitions", value=list_of_competitions)
+        old_club_points = int(list_of_clubs[0]["points"])
+        places_required = "8" if int(list_of_clubs[0]["points"]) > 12 else list_of_clubs[0]["points"]
+        purchase_data = {
+            "club": list_of_clubs[0]["name"],
+            "competition": list_of_competitions[0]["name"],
+            "places": places_required,
+        }
+        response = client.post("/purchasePlaces", data=purchase_data)
+        response_data_html = BeautifulSoup(response.data, features="html.parser")
+        club_points_message = response_data_html.find(name="p", class_="club_points").string
+        assert club_points_message == f"Points available: {old_club_points - int(places_required)}"
         assert response.status_code == 200
