@@ -146,3 +146,34 @@ class TestPurchasePlaces:
         competitions_list = response_data_html.find_all(name="ul")
         assert f"Number of Places: {old_competition_places - int(places_required)}" in str(competitions_list)
         assert response.status_code == 200
+
+    def test_purchase_places_of_unknown_competition(self, monkeypatch, list_of_clubs, list_of_competitions, client):
+        monkeypatch.setattr(target=server, name="clubs", value=list_of_clubs)
+        monkeypatch.setattr(target=server, name="competitions", value=list_of_competitions)
+        places_required = "8" if int(list_of_clubs[0]["points"]) > 12 else list_of_clubs[0]["points"]
+        purchase_data = {
+            "club": list_of_clubs[0]["name"],
+            "competition": "unknown competition",
+            "places": places_required,
+        }
+        response = client.post("/purchasePlaces", data=purchase_data)
+        response_data_html = BeautifulSoup(response.data, features="html.parser")
+        validation_message = response_data_html.find(name="ul", class_="message")
+        assert "Something went wrong-please try again" in str(validation_message)
+        assert response.status_code == 400
+
+    def test_purchase_places_of_unknown_competition_and_club(self, monkeypatch, list_of_clubs,
+                                                             list_of_competitions, client):
+        monkeypatch.setattr(target=server, name="clubs", value=list_of_clubs)
+        monkeypatch.setattr(target=server, name="competitions", value=list_of_competitions)
+        places_required = "8" if int(list_of_clubs[0]["points"]) > 12 else list_of_clubs[0]["points"]
+        purchase_data = {
+            "club": "unknown club",
+            "competition": "unknown competition",
+            "places": places_required,
+        }
+        response = client.post("/purchasePlaces", data=purchase_data)
+        response_data_html = BeautifulSoup(response.data, features="html.parser")
+        error_message = response_data_html.find(name="p", class_="error").string
+        assert "Sorry, you are not authorized to make this request." in error_message
+        assert response.status_code == 401

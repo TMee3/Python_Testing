@@ -4,23 +4,23 @@ from datetime import datetime
 from flask import Flask, render_template, request, redirect, flash, url_for
 
 
-def loadClubs():
+def load_clubs():
     with open('clubs.json') as c:
-         listOfClubs = json.load(c)['clubs']
-         return listOfClubs
+        list_of_clubs = json.load(c)['clubs']
+        return list_of_clubs
 
 
-def loadCompetitions():
+def load_competitions():
     with open('competitions.json') as comps:
-         listOfCompetitions = json.load(comps)['competitions']
-         return listOfCompetitions
+        list_of_competitions = json.load(comps)['competitions']
+        return list_of_competitions
 
 
 app = Flask(__name__)
 app.secret_key = 'something_special'
 
-competitions = loadCompetitions()
-clubs = loadClubs()
+competitions = load_competitions()
+clubs = load_clubs()
 
 
 @app.route('/')
@@ -46,18 +46,20 @@ def book(competition, club):
         competition_date = datetime.strptime(found_competition[0]["date"], "%Y-%m-%d %H:%M:%S")
         if competition_date < today_date:
             flash("This competition is already over.")
-            return (render_template(template_name_or_list='welcome.html', club=found_club[0], competitions=competitions)
-                    , 400)
+            return render_template(template_name_or_list='welcome.html',
+                                   club=found_club[0],
+                                   competitions=competitions), 400
         return render_template(template_name_or_list='booking.html',
                                club=found_club[0],
                                competition=found_competition[0],
                                total_places=int(found_competition[0]["numberOfPlaces"]))
-    elif len(found_club) > 0 and len(found_competition) < 1:
+    if len(found_club) > 0 and len(found_competition) < 1:
         flash("Something went wrong-please try again")
-        return render_template(template_name_or_list='welcome.html', club=found_club[0], competitions=competitions), 400
-    else:
-        return render_template(template_name_or_list='index.html',
-                               error="Sorry, you are not authorized to make this request."), 401
+        return render_template(template_name_or_list='welcome.html',
+                               club=found_club[0],
+                               competitions=competitions), 400
+    return render_template(template_name_or_list='index.html',
+                           error="Sorry, you are not authorized to make this request."), 401
 
 
 @app.route(rule='/purchasePlaces', methods=['POST'])

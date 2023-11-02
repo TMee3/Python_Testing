@@ -1,7 +1,6 @@
 from bs4 import BeautifulSoup
 
 import server
-from tests.conftest import client, list_of_clubs
 
 
 class TestLogin:
