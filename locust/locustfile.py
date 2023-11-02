@@ -21,7 +21,7 @@ class LocustTest(HttpUser):
 
     @task
     def go_to_board(self):
-        self.client.get("/board")
+        self.client.get("/clubs")
 
     def on_start(self):
         self.client.post("/showSummary", data={'email': 'john@simplylift.co'})
