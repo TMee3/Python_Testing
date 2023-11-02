@@ -124,3 +124,5 @@ class TestPurchasePlaces:
         club_points_message = response_data_html.find(name="p", class_="club_points").string
         assert club_points_message == f"Points available: {old_club_points - int(places_required)}"
         assert response.status_code == 200
+
+        
