@@ -4,6 +4,7 @@ from datetime import datetime
 from flask import Flask, render_template, request, redirect, flash, url_for
 
 
+
 def loadClubs():
     with open('clubs.json') as c:
          listOfClubs = json.load(c)['clubs']
