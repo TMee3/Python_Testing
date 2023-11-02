@@ -33,7 +33,7 @@ def showSummary():
     if len(club) > 0:
         return render_template(template_name_or_list='welcome.html', club=club[0], competitions=competitions)
     else:
-        return render_template(template_name_or_list='index.html', error="Sorry, that email wasn't found.")
+        return render_template(template_name_or_list='index.html', error="Sorry, that email wasn't found."), 401
 
 
 @app.route('/book/<competition>/<club>')
