@@ -20,3 +20,15 @@ def list_of_clubs():
         },
     ]
     return clubs
+
+
+@pytest.fixture()
+def list_of_competitions():
+    competitions = [
+        {
+            "name": "Test competition",
+            "date": "2024-01-01 11:00:00",
+            "numberOfPlaces": "20"
+        },
+    ]
+    return competitions
