@@ -125,4 +125,55 @@ class TestPurchasePlaces:
         assert club_points_message == f"Points available: {old_club_points - int(places_required)}"
         assert response.status_code == 200
 
-        
+    def test_update_competition_places_after_booking_place(self, monkeypatch, list_of_clubs,
+                                                           list_of_competitions, client):
+        monkeypatch.setattr(target=server, name="clubs", value=list_of_clubs)
+        monkeypatch.setattr(target=server, name="competitions", value=list_of_competitions)
+        old_competition_places = int(list_of_competitions[0]["numberOfPlaces"])
+        if int(list_of_clubs[0]["points"]) > 12 and old_competition_places > 12:
+            places_required = "8"
+        elif int(list_of_clubs[0]["points"]) > old_competition_places:
+            places_required = str(old_competition_places - 1)
+        else:
+            places_required = list_of_clubs[0]["points"]
+        purchase_data = {
+            "club": list_of_clubs[0]["name"],
+            "competition": list_of_competitions[0]["name"],
+            "places": places_required,
+        }
+        response = client.post("/purchasePlaces", data=purchase_data)
+        response_data_html = BeautifulSoup(response.data, features="html.parser")
+        competitions_list = response_data_html.find_all(name="ul")
+        assert f"Number of Places: {old_competition_places - int(places_required)}" in str(competitions_list)
+        assert response.status_code == 200
+
+    def test_purchase_places_of_unknown_competition(self, monkeypatch, list_of_clubs, list_of_competitions, client):
+        monkeypatch.setattr(target=server, name="clubs", value=list_of_clubs)
+        monkeypatch.setattr(target=server, name="competitions", value=list_of_competitions)
+        places_required = "8" if int(list_of_clubs[0]["points"]) > 12 else list_of_clubs[0]["points"]
+        purchase_data = {
+            "club": list_of_clubs[0]["name"],
+            "competition": "unknown competition",
+            "places": places_required,
+        }
+        response = client.post("/purchasePlaces", data=purchase_data)
+        response_data_html = BeautifulSoup(response.data, features="html.parser")
+        validation_message = response_data_html.find(name="ul", class_="message")
+        assert "Something went wrong-please try again" in str(validation_message)
+        assert response.status_code == 400
+
+    def test_purchase_places_of_unknown_competition_and_club(self, monkeypatch, list_of_clubs,
+                                                             list_of_competitions, client):
+        monkeypatch.setattr(target=server, name="clubs", value=list_of_clubs)
+        monkeypatch.setattr(target=server, name="competitions", value=list_of_competitions)
+        places_required = "8" if int(list_of_clubs[0]["points"]) > 12 else list_of_clubs[0]["points"]
+        purchase_data = {
+            "club": "unknown club",
+            "competition": "unknown competition",
+            "places": places_required,
+        }
+        response = client.post("/purchasePlaces", data=purchase_data)
+        response_data_html = BeautifulSoup(response.data, features="html.parser")
+        error_message = response_data_html.find(name="p", class_="error").string
+        assert "Sorry, you are not authorized to make this request." in error_message
+        assert response.status_code == 401
